@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Matching System | Data Processing Portfolio</title>
+    <meta name="description" content="Browser-based tool that matches customer orders to product database using fuzzy matching and NLP">
+    <style>
+        /* RESET & BASE STYLES */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* HEADER */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        /* MAIN CONTENT */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* CARD STYLES */
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        /* FORM ELEMENTS */
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            background: #f7fafc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="file"]:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* BUTTONS */
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #4c51bf 0%, #2d3748 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #2f855a 100%);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        /* INFO BOXES */
+        .info-box {
+            background: #e6fffa;
+            border-left: 4px solid #38b2ac;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .warning-box {
+            background: #fffaf0;
+            border-left: 4px solid #ed8936;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        /* OUTPUT AREA */
+        .output-section {
+            margin-top: 40px;
+        }
+        
+        .output-box {
+            background: #1a202c;
+            color: #cbd5e0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        /* VISUALIZATION */
+        .visualization {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        
+        .match-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background: #f7fafc;
+            border-left: 4px solid #cbd5e0;
+        }
+        
+        .match-item.priority {
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+        
+        .match-item.other {
+            border-left-color: #4299e1;
+            background: #ebf8ff;
+        }
+        
+        .match-item.unknown {
+            border-left-color: #ed8936;
+            background: #fffaf0;
+        }
+        
+        .match-item.unmatched {
+            border-left-color: #f56565;
+            background: #fff5f5;
+        }
+        
+        .quantity-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-right: 15px;
+            min-width: 60px;
+            text-align: center;
+        }
+        
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+            margin-top: 50px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .tech-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* LOADING INDICATOR */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* AUTOCOMPLETE */
+        .autocomplete-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f7fafc;
+        }
+        
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background: #ebf8ff;
+        }
+        
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <header class="header">
+            <h1>🛒 Order Matching System</h1>
+            <p>A Data Processing Portfolio Project | Browser-based order automation tool</p>
+            <div class="tech-stack">
+                <span class="tech-badge">HTML5</span>
+                <span class="tech-badge">CSS3</span>
+                <span class="tech-badge">JavaScript</span>
+                <span class="tech-badge">SheetJS</span>
+                <span class="tech-badge">NLP Processing</span>
+                <span class="tech-badge">Fuzzy Matching</span>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- LEFT COLUMN: INPUT -->
+            <div class="card">
+                <h2>📥 Input Data</h2>
+                
+                <!-- File Upload -->
+                <div class="form-group">
+                    <label for="fileInput">1. Upload Customer Product Database</label>
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+                    <div class="info-box">
+                        <strong>Required File Format:</strong>
+                        <ul style="margin: 10px 0 10px 20px;">
+                            <li><strong>Customer</strong> - Customer name</li>
+                            <li><strong>Product</strong> - Product description</li>
+                            <li><strong>Special Price</strong> - Customer-specific price</li>
+                            <li><strong>SKU</strong> - Product code</li>
+                        </ul>
+                        <small>Database must be uploaded before processing orders</small>
+                    </div>
+                </div>
+
+                <!-- Order Input -->
+                <div class="form-group" style="margin-top: 25px;">
+                    <label for="messageInput">2. Paste Customer Order</label>
+                    <textarea id="messageInput" placeholder="Paste order in any format (email, text, list)..."></textarea>
+                </div>
+
+                <!-- Customer Name -->
+                <div class="form-group" style="margin-top: 25px;">
+                    <label for="customerInput">3. Customer Name</label>
+                    <input type="text" id="customerInput" placeholder="Type customer name or select from suggestions...">
+                    <div id="autocompleteSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="displayBtn">🚀 Match Order Items</button>
+                    <button class="btn btn-secondary" id="exampleBtn">📋 Load Example</button>
+                    <button class="btn" id="testParseBtn">🔍 Test Parsing</button>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div class="loading" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    <p>Processing order... Please wait.</p>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: OUTPUT -->
+            <div class="card">
+                <h2>📤 Processing Results</h2>
+                
+                <!-- Customer Match Info -->
+                <div id="customerMatchInfo" class="info-box" style="display: none;"></div>
+                
+                <!-- New Customer Warning -->
+                <div id="newCustomerWarning" class="warning-box" style="display: none;"></div>
+                
+                <!-- Output Box -->
+                <div class="output-section">
+                    <h3>Formatted Output</h3>
+                    <div class="output-box" id="outputBox">
+                        <!-- Output will appear here -->
+                        Upload a database and paste an order to see results...
+                    </div>
+                    
+                    <!-- Output Actions -->
+                    <div class="btn-group">
+                        <button class="btn btn-success" id="copyBtn">📋 Copy to Clipboard</button>
+                        <button class="btn" id="selectBtn">🔍 Select All Text</button>
+                        <button class="btn btn-danger" id="clearBtn">🗑️ Clear Output</button>
+                    </div>
+                    
+                    <!-- Copy Status -->
+                    <div id="copyStatus" style="margin-top: 10px; font-weight: bold;"></div>
+                </div>
+
+                <!-- Visualization -->
+                <div class="visualization" id="matchVisualization" style="display: none;">
+                    <h3>📊 Match Visualization</h3>
+                    <div id="visualizationContent">
+                        <!-- Visualization items will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOW IT WORKS SECTION -->
+        <div class="card" style="margin-top: 30px;">
+            <h2>⚙️ How It Works</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div class="step">
+                    <h3>1. Upload Database</h3>
+                    <p>Upload your Excel/CSV file with customer products, prices, and SKUs.</p>
+                </div>
+                <div class="step">
+                    <h3>2. Paste Order</h3>
+                    <p>Copy-paste any customer order - email, text message, or list format.</p>
+                </div>
+                <div class="step">
+                    <h3>3. Automatic Parsing</h3>
+                    <p>System extracts quantities, products, and customer names automatically.</p>
+                </div>
+                <div class="step">
+                    <h3>4. Smart Matching</h3>
+                    <p>Fuzzy matching algorithm finds best product matches with confidence scores.</p>
+                </div>
+                <div class="step">
+                    <h3>5. Get Results</h3>
+                    <p>Copy-paste ready output with prices, SKUs, and customer groupings.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <h3>Order Matching System</h3>
+            <p>A Data Processing & Web Development Portfolio Project</p>
+            <p>Built with Vanilla JavaScript • No Frameworks • No Backend Required</p>
+            <div style="margin-top: 20px;">
+                <a href="https://github.com/yourusername/order-matching-system" class="btn" target="_blank" style="margin: 0 10px;">📂 View on GitHub</a>
+                <a href="#" class="btn btn-secondary" onclick="loadExampleOrder()" style="margin: 0 10px;">🚀 Try Live Demo</a>
+            </div>
+            <p style="margin-top: 20px; opacity: 0.8; font-size: 14px;">
+                Demonstrates: Excel/CSV Processing • Natural Language Parsing • Fuzzy Matching Algorithms • UI/UX Design
+            </p>
+        </footer>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script>
+        // ====================
+        // MAIN VARIABLES
+        // ====================
+        let fullData = [];
+        let uniqueCustomers = [];
+        let lastMatches = [];
+        let matchedCustomerName = "";
+        let customerProductCache = new Map();
+        let customerProductCounts = new Map();
+
+        // ====================
+        // DOM ELEMENTS
+        // ====================
+        const elements = {
+            fileInput: document.getElementById('fileInput'),
+            messageInput: document.getElementById('messageInput'),
+            customerInput: document.getElementById('customerInput'),
+            displayBtn: document.getElementById('displayBtn'),
+            exampleBtn: document.getElementById('exampleBtn'),
+            testParseBtn: document.getElementById('testParseBtn'),
+            message: document.getElementById('message'),
+            loadingIndicator: document.getElementById('loadingIndicator'),
+            customerMatchInfo: document.getElementById('customerMatchInfo'),
+            newCustomerWarning: document.getElementById('newCustomerWarning'),
+            outputBox: document.getElementById('outputBox'),
+            copyBtn: document.getElementById('copyBtn'),
+            selectBtn: document.getElementById('selectBtn'),
+            clearBtn: document.getElementById('clearBtn'),
+            copyStatus: document.getElementById('copyStatus'),
+            matchVisualization: document.getElementById('matchVisualization'),
+            visualizationContent: document.getElementById('visualizationContent'),
+            autocompleteSuggestions: document.getElementById('autocompleteSuggestions')
+        };
+
+        // ====================
+        // EVENT LISTENERS
+        // ====================
+        function initializeEventListeners() {
+            elements.fileInput.addEventListener('change', handleFile);
+            elements.displayBtn.addEventListener('click', matchOrderItems);
+            elements.exampleBtn.addEventListener('click', loadExampleOrder);
+            elements.testParseBtn.addEventListener('click', testParsing);
+            elements.copyBtn.addEventListener('click', copyToClipboard);
+            elements.selectBtn.addEventListener('click', selectOutputText);
+            elements.clearBtn.addEventListener('click', clearOutput);
+            elements.customerInput.addEventListener('input', handleCustomerInput);
+        }
+
+        // ====================
+        // FILE HANDLING
+        // ====================
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const workbook = XLSX.read(e.target.result, { type: 'binary' });
+                    parseWorkbook(workbook);
+                } catch (error) {
+                    showMessage(`Error reading file: ${error.message}`, 'error');
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function parseWorkbook(workbook) {
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const data = XLSX.utils.sheet_to_json(sheet);
+            
+            if (data.length === 0) {
+                showMessage('Uploaded file is empty.', 'error');
+                return;
+            }
+
+            // Process data and build caches...
+            // [Insert the data processing logic from previous code]
+            
+            showMessage(`✅ Database loaded with ${data.length} products`, 'success');
+            enableUI();
+        }
+
+        // ====================
+        // UI FUNCTIONS
+        // ====================
+        function showMessage(text, type = 'info') {
+            const colors = {
+                success: '#48bb78',
+                error: '#f56565',
+                warning: '#ed8936',
+                info: '#4299e1'
+            };
+            
+            elements.message.innerHTML = `<span style="color: ${colors[type]}">${text}</span>`;
+        }
+
+        function enableUI() {
+            elements.messageInput.disabled = false;
+            elements.customerInput.disabled = false;
+            elements.displayBtn.disabled = false;
+            elements.exampleBtn.disabled = false;
+            elements.testParseBtn.disabled = false;
+        }
+
+        function loadExampleOrder() {
+            elements.messageInput.value = `From: The Pringle
+
+Hi please can I order for tomorrow 10 kg chicken, 18kg bacon bits, 4 ham, 4 salami, 1x 100g pancetta and 1 x 100g Parma and 500g Biltong (not fatty)
+
+Thanks!
+
+John`;
+            
+            elements.customerInput.value = "The Pringle";
+            showMessage('📋 Example order loaded. Click "Match Order Items" to process.', 'info');
+        }
+
+        // ====================
+        // MAIN MATCHING FUNCTION
+        // ====================
+        function matchOrderItems() {
+            const orderText = elements.messageInput.value.trim();
+            const customerName = elements.customerInput.value.trim();
+
+            if (!orderText) {
+                showMessage('Please paste a customer order.', 'error');
+                return;
+            }
+
+            elements.loadingIndicator.style.display = 'block';
+            
+            setTimeout(() => {
+                try {
+                    // Parse order items
+                    const items = parseOrderItems(orderText);
+                    
+                    if (items.length === 0) {
+                        showMessage('No order items found. Check your format.', 'error');
+                        return;
+                    }
+
+                    // Match items to database
+                    const matches = performMatching(items, customerName);
+                    
+                    // Generate output
+                    generateOutput(matches);
+                    generateVisualization(matches);
+                    
+                    // Show results
+                    elements.outputContainer.style.display = 'block';
+                    elements.matchVisualization.style.display = 'block';
+                    
+                    showMessage(`✅ Matched ${matches.filter(m => m.confidence > 0).length} of ${items.length} items`, 'success');
+                    
+                } catch (error) {
+                    showMessage(`Error: ${error.message}`, 'error');
+                } finally {
+                    elements.loadingIndicator.style.display = 'none';
+                }
+            }, 500);
+        }
+
+        // ====================
+        // OUTPUT FUNCTIONS
+        // ====================
+        function generateOutput(matches) {
+            let output = "ORDER MATCHING RESULTS\n";
+            output += "=====================\n\n";
+            
+            // Group by customer
+            const groups = {};
+            matches.forEach(match => {
+                const customer = match.customer || 'Unknown';
+                if (!groups[customer]) groups[customer] = [];
+                groups[customer].push(match);
+            });
+            
+            // Format output
+            for (const [customer, items] of Object.entries(groups)) {
+                output += `${customer.toUpperCase()}:\n`;
+                output += '-'.repeat(customer.length) + '\n';
+                
+                items.forEach(item => {
+                    const qty = item.quantity > 1 ? `${item.quantity} x ` : '';
+                    output += `  • ${qty}${item.matchedProduct || 'No match'}`;
+                    if (item.price) output += ` (Price: ${item.price})`;
+                    if (item.sku) output += ` [SKU: ${item.sku}]`;
+                    output += '\n';
+                });
+                
+                output += '\n';
+            }
+            
+            elements.outputBox.textContent = output;
+        }
+
+        function generateVisualization(matches) {
+            let html = '';
+            
+            matches.forEach((match, index) => {
+                const type = match.isPriorityCustomer ? 'priority' : 
+                            match.customer === 'Unknown' ? 'unknown' : 
+                            match.confidence === 0 ? 'unmatched' : 'other';
+                
+                html += `
+                    <div class="match-item ${type}">
+                        <div class="quantity-badge">${match.quantity}x</div>
+                        <div style="flex: 1;">
+                            <strong>${match.cleaned || match.orderItem}</strong>
+                            ${match.matchedProduct ? `<div style="font-size: 12px; color: #666;">→ ${match.matchedProduct}</div>` : ''}
+                            ${match.customer ? `<div style="font-size: 11px; color: #999;">Customer: ${match.customer}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            elements.visualizationContent.innerHTML = html;
+        }
+
+        // ====================
+        // UTILITY FUNCTIONS
+        // ====================
+        function copyToClipboard() {
+            const text = elements.outputBox.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                elements.copyStatus.textContent = '✅ Copied to clipboard!';
+                elements.copyStatus.style.color = '#48bb78';
+                setTimeout(() => elements.copyStatus.textContent = '', 3000);
+            });
+        }
+
+        function selectOutputText() {
+            const range = document.createRange();
+            range.selectNodeContents(elements.outputBox);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            elements.copyStatus.textContent = '📋 Text selected - press Ctrl+C to copy';
+            elements.copyStatus.style.color = '#4299e1';
+        }
+
+        function clearOutput() {
+            elements.outputBox.textContent = '';
+            elements.visualizationContent.innerHTML = '';
+            elements.copyStatus.textContent = '';
+            elements.matchVisualization.style.display = 'none';
+        }
+
+        function testParsing() {
+            const text = elements.messageInput.value.trim();
+            if (!text) {
+                showMessage('Please paste an order first.', 'error');
+                return;
+            }
+            
+            const items = parseOrderItems(text);
+            let output = "PARSING TEST RESULTS\n";
+            output += "====================\n\n";
+            
+            items.forEach((item, i) => {
+                output += `Item ${i+1}:\n`;
+                output += `  Original: ${item.original}\n`;
+                output += `  Quantity: ${item.quantity}\n`;
+                output += `  Product: ${item.cleaned}\n`;
+                output += `  Search Words: [${item.searchWords.join(', ')}]\n\n`;
+            });
+            
+            elements.outputBox.textContent = output;
+            showMessage(`🔍 Parsed ${items.length} items`, 'info');
+        }
+
+        // ====================
+        // INITIALIZATION
+        // ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeEventListeners();
+            showMessage('Welcome! Upload a database file to begin.', 'info');
+        });
+
+        // Note: For production, you would include the complete matching algorithms
+        // (parseOrderItems, calculateMatchScore, etc.) from the previous code snippet
+    </script>
+</body>
+</html>
